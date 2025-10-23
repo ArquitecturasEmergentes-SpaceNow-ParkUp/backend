@@ -15,6 +15,8 @@ import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.queries.Ge
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.queries.GetRecognitionUnitByIdQuery;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.services.RecognitionUnitCommandService;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.services.RecognitionUnitQueryService;
+import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.services.EdgeNodeCommunicationService;
+import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.commands.MakeEdgeNodeRequestCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.resources.BarrierControlRequest;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.resources.CreateRecognitionUnitRequest;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.resources.RecognitionUnitResource;
@@ -32,6 +34,7 @@ import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transfo
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.http.HttpMethod;
 
 /**
  * RecognitionUnitController
@@ -46,11 +49,14 @@ public class RecognitionUnitController {
 
     private final RecognitionUnitCommandService recognitionUnitCommandService;
     private final RecognitionUnitQueryService recognitionUnitQueryService;
+    private final EdgeNodeCommunicationService edgeNodeCommunicationService;
 
     public RecognitionUnitController(RecognitionUnitCommandService recognitionUnitCommandService,
-                                   RecognitionUnitQueryService recognitionUnitQueryService) {
+                                   RecognitionUnitQueryService recognitionUnitQueryService,
+                                   EdgeNodeCommunicationService edgeNodeCommunicationService) {
         this.recognitionUnitCommandService = recognitionUnitCommandService;
         this.recognitionUnitQueryService = recognitionUnitQueryService;
+        this.edgeNodeCommunicationService = edgeNodeCommunicationService;
     }
 
     @PostMapping
@@ -201,6 +207,31 @@ public class RecognitionUnitController {
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{recognitionUnitId}/request")
+    @Operation(summary = "Make request to Edge Node", description = "Send HTTP request to a specific Edge Node")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request sent successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request or Edge Node not found"),
+            @ApiResponse(responseCode = "500", description = "Failed to communicate with Edge Node")
+    })
+    public ResponseEntity<String> makeEdgeNodeRequest(
+            @PathVariable Long recognitionUnitId,
+            @RequestParam String endpoint,
+            @RequestParam(defaultValue = "GET") HttpMethod method,
+            @RequestBody(required = false) String requestBody) {
+        
+        try {
+            var command = MakeEdgeNodeRequestCommand.of(recognitionUnitId, endpoint, method, requestBody);
+            String response = edgeNodeCommunicationService.makeRequest(command);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error making request: " + e.getMessage());
         }
     }
 }
