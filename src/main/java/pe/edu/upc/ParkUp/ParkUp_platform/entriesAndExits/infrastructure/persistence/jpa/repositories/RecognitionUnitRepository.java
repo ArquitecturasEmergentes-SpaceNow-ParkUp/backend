@@ -70,4 +70,5 @@ public interface RecognitionUnitRepository extends JpaRepository<RecognitionUnit
      * @return Count of recognition units.
      */
     long countByAffiliateId(Long affiliateId);
+    Optional<RecognitionUnit> findByIpAddressAndPort(String ipAddress, Integer port);
 }
