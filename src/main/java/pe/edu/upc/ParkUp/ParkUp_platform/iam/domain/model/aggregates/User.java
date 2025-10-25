@@ -22,7 +22,6 @@ import java.util.Set;
 @Setter
 @Entity
 
-@Table(name = "user")
 
 public class User extends AuditableAbstractAggregateRoot<User> {
 
