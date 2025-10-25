@@ -105,6 +105,8 @@ public class WebSecurityConfiguration {
                 "/api/v1/authentication/**", 
                 "/api/v1/recognition-units/**",
                 "/api/v1/entries-and-exits/**",
+                            "/api/v1/edge-nodes/**",
+                "/api/v1/authentication/register",
                 "/v3/api-docs/**", "/swagger-ui.html",
                 "/swagger-ui/**", "/swagger-resources/**", "/webjars/**")
                 .permitAll()
