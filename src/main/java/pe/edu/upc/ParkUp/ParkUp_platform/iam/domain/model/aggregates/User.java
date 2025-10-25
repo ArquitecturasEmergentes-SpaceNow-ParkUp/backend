@@ -21,6 +21,9 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
+
+@Table(name = "user")
+
 public class User extends AuditableAbstractAggregateRoot<User> {
 
   @NotBlank
