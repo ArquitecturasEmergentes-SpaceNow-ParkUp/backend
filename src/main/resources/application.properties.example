@@ -5,10 +5,9 @@ spring.application.name=ParkUp-platform
 ###    JDBC : SGDB :// HOST : PORT / DB
 spring.datasource.url:  jdbc:postgresql://localhost:5432/parkupbackend
 
-
 spring.datasource.username: postgres
 # Change this password to your own
-spring.datasource.password: ${DB_PASSWORD:admin}
+spring.datasource.password: ${DB_PASSWORD:your-database-password}
 spring.datasource.driver-class-name: org.postgresql.Driver
 
 # Spring Data JPA Configuration
@@ -36,7 +35,7 @@ documentation.application.description=@project.description@
 documentation.application.version=@project.version@
 
 # JWT Configuration Properties
-authorization.jwt.secret = ${JWT_SECRET:WriteHereYourSecretStringForTokenSigningCredentials}
+authorization.jwt.secret = ${JWT_SECRET:your-jwt-secret-key}
 authorization.jwt.expiration.days = 7
 
 #*****************iam************************
@@ -52,7 +51,7 @@ notification.whatsapp.enabled=true
 twilio.account-sid=${TWILIO_ACCOUNT_SID:your-twilio-account-sid}
 twilio.auth-token=${TWILIO_AUTH_TOKEN:your-twilio-auth-token}
 # Twilio WhatsApp Sandbox number (for production, use your approved WhatsApp Business number)
-twilio.from-number=${TWILIO_FROM_NUMBER:+14155238886}
-
+twilio.from-number=${TWILIO_FROM_NUMBER:your-twilio-phone-number}
 
 #***************** Notification Configuration *************************
+
