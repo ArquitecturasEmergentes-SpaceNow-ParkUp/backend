@@ -123,21 +123,16 @@ public class RecognitionUnitController {
         return ResponseEntity.ok(resources);
     }
 
-    @PostMapping("/{recognitionUnitId}/barrier-control")
-    @Operation(summary = "Control barrier", description = "Control barrier (open/close) for a recognition unit")
+    @PostMapping("/barrier-control")
+    @Operation(summary = "Control barrier", description = "Control the barrier of a recognition unit (open/close)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Barrier controlled successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "404", description = "Recognition unit not found")
     })
-    public ResponseEntity<RecognitionUnitResource> controlBarrier(@PathVariable Long recognitionUnitId,
-                                                                @Valid @RequestBody BarrierControlRequest request) {
+    public ResponseEntity<RecognitionUnitResource> controlBarrier(@Valid @RequestBody BarrierControlRequest request) {
+        // TODO: Revisar aqui el action no tiene donde guardarse, no esta siendo usando.
         try {
-            // Ensure the recognition unit ID in the path matches the one in the request
-            if (!recognitionUnitId.equals(request.recognitionUnitId())) {
-                return ResponseEntity.badRequest().build();
-            }
-            
             var command = ControlBarrierCommandFromRequestAssembler.toCommandFromRequest(request);
             Optional<RecognitionUnit> recognitionUnitOptional = recognitionUnitCommandService.handle(command);
             
@@ -146,7 +141,7 @@ public class RecognitionUnitController {
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 

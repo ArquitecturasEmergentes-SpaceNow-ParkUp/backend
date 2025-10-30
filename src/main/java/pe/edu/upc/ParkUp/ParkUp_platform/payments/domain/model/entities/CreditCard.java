@@ -78,20 +78,5 @@ public class CreditCard {
     public void setUser(User user) {
         this.user = user;
     }
-    public Long getId() {
-        return id;
-    }
-    public String getCardNumber() {
-        return cardNumber;
-    }
-    public String getCardHolderName() {
-        return cardHolderName;
-    }
-    public String getExpirationDate() {
-        return expirationDate;
-    }
-    public String getCvv() {
-        return cvv;
-    }
 }
 

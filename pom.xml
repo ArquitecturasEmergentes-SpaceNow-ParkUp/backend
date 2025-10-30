@@ -106,7 +106,20 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.12.0</version>
 		</dependency>
-		<!--*************** iam *********************** -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!--*************** iam *********************** -->
+
+		<!--*************** Notification - Twilio SMS *********************** -->
+		<!-- https://mvnrepository.com/artifact/com.twilio.sdk/twilio -->
+		<dependency>
+			<groupId>com.twilio.sdk</groupId>
+			<artifactId>twilio</artifactId>
+			<version>10.5.1</version>
+		</dependency>
+		<!--*************** Notification - Twilio SMS *********************** -->
 
 	</dependencies>
 

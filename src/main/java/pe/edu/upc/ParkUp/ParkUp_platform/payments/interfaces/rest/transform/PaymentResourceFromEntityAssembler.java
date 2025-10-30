@@ -6,8 +6,10 @@ import pe.edu.upc.ParkUp.ParkUp_platform.payments.interfaces.rest.resources.Paym
 public class PaymentResourceFromEntityAssembler {
     public static PaymentResource toResourceFromEntity(Payment payment) {
         return new PaymentResource(
+                payment.getId(),
                 payment.getAmount(),
-                payment.getCreditCardId() != null ? payment.getCreditCardId() : null
+                payment.getCreditCardId(),
+                payment.getReservationId()
         );
     }
 }

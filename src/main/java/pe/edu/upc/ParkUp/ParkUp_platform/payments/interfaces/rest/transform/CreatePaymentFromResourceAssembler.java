@@ -6,6 +6,6 @@ import pe.edu.upc.ParkUp.ParkUp_platform.payments.interfaces.rest.resources.Crea
 
 public class CreatePaymentFromResourceAssembler {
     public static CreatePaymentCommand toCommandFromResource(CreatePaymentResource resource) {
-        return new CreatePaymentCommand(resource.creditCardId(), resource.amount());
+        return new CreatePaymentCommand(resource.creditCardId(), resource.amount(), resource.reservationId());
     }
 }

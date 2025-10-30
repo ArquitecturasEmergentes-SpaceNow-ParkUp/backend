@@ -41,6 +41,7 @@ public class EdgeNodeController {
     })
     public ResponseEntity<EdgeNodeResponse> registerEdgeNode(@Valid @RequestBody EdgeNodeRegistrationRequest request) {
         try {
+            //TODO: Redundante el id en el parametro de la url y en el body, eliminar uno de los dos
             String identifier = "edge_node_" + System.currentTimeMillis();
             
             Long defaultAffiliateId = 1L;

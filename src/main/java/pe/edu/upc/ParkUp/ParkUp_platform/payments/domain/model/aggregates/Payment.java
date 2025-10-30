@@ -22,14 +22,19 @@ public class Payment {
     @ManyToOne(optional = false)
     @JoinColumn(name = "credit_card_id", nullable = false)
     private CreditCard creditCard;
+    
+    @Column(name = "reservation_id")
+    private Long reservationId;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private java.time.LocalDateTime createdAt;
 
-    public Payment(Double amount, CreditCard creditCard) {
+    public Payment(Double amount, CreditCard creditCard, Long reservationId) {
         this.amount = amount;
         this.creditCard = creditCard;
-        this.createdAt = java.time.LocalDateTime.now(); // <-- Aquí
+        this.reservationId = reservationId;
+        this.createdAt = java.time.LocalDateTime.now();
     }
 
 
@@ -49,5 +54,11 @@ public class Payment {
         return creditCard.getId();
     }
 
+    public Long getReservationId() {
+        return reservationId;
+    }
 
+    public Long getUserId() {
+        return creditCard.getUserId();
+    }
 }
