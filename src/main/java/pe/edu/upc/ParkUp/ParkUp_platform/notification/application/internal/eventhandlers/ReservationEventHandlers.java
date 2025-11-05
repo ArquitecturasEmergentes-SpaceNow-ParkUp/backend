@@ -1,6 +1,12 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.notification.application.internal.eventhandlers;
 
 import org.springframework.stereotype.Component;
+import org.springframework.context.event.EventListener;
+import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationConfirmedEvent;
+import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationCreatedEvent;
+import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationCancelledEvent;
+import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationStartedEvent;
+import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationCompletedEvent;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.commands.SendNotificationCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.valueobjects.NotificationChannel;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.valueobjects.NotificationType;
@@ -23,11 +29,11 @@ public class ReservationEventHandlers {
      * Handles reservation confirmed event
      * TODO: Implement @EventListener when event publishing is set up
      */
-    // @EventListener
-    public void on(Object reservationConfirmedEvent) {
+    @EventListener
+    public void on(ReservationConfirmedEvent reservationConfirmedEvent) {
         // Extract data from event
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
+        Long userId = reservationConfirmedEvent.getUserId();
+        Long reservationId = reservationConfirmedEvent.getReservationId();
         
         // Send PUSH notification
         var pushCommand = new SendNotificationCommand(
@@ -56,18 +62,19 @@ public class ReservationEventHandlers {
      * Handles reservation reminder event
      * TODO: Implement @EventListener when event publishing is set up
      */
-    // @EventListener
-    public void onReservationReminder(Object event) {
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
-        String startTime = "10:00 AM"; // Get from event
-        
+    @EventListener
+    public void onReservationReminder(ReservationCreatedEvent event) {
+        Long userId = event.getUserId();
+        Long reservationId = event.getReservationId();
+        var startTime = event.getStartTime();
+        String startStr = (startTime != null) ? startTime.toString() : "soon";
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
                 NotificationType.RESERVATION_REMINDER,
                 "Reservation Starting Soon",
-                "Your parking reservation starts at " + startTime + ". Don't be late!",
+                "Your parking reservation starts at " + startStr + ". Don't be late!",
                 "{\"reservationId\": " + reservationId + "}"
         );
         notificationCommandService.handle(command);
@@ -76,10 +83,10 @@ public class ReservationEventHandlers {
     /**
      * Handles reservation cancelled event
      */
-    // @EventListener
-    public void onReservationCancelled(Object event) {
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
+    @EventListener
+    public void onReservationCancelled(ReservationCancelledEvent event) {
+        Long userId = event.getUserId();
+        Long reservationId = event.getReservationId();
         
         var command = new SendNotificationCommand(
                 userId,
@@ -95,10 +102,10 @@ public class ReservationEventHandlers {
     /**
      * Handles reservation started event
      */
-    // @EventListener
-    public void onReservationStarted(Object event) {
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
+    @EventListener
+    public void onReservationStarted(ReservationStartedEvent event) {
+        Long userId = event.getUserId();
+        Long reservationId = event.getReservationId();
         
         var command = new SendNotificationCommand(
                 userId,
@@ -114,10 +121,10 @@ public class ReservationEventHandlers {
     /**
      * Handles reservation completed event
      */
-    // @EventListener
-    public void onReservationCompleted(Object event) {
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
+    @EventListener
+    public void onReservationCompleted(ReservationCompletedEvent event) {
+        Long userId = event.getUserId();
+        Long reservationId = event.getReservationId();
         
         var command = new SendNotificationCommand(
                 userId,
@@ -133,10 +140,11 @@ public class ReservationEventHandlers {
     /**
      * Handles reservation expired event
      */
-    // @EventListener
+    @EventListener
     public void onReservationExpired(Object event) {
-        Long userId = 1L; // Get from event
-        Long reservationId = 100L; // Get from event
+        // No explicit ReservationExpiredEvent defined in domain; keep as generic listener for now
+        Long userId = 1L; // Keep placeholder until an event is modeled
+        Long reservationId = 100L; // Keep placeholder until an event is modeled
         
         var command = new SendNotificationCommand(
                 userId,

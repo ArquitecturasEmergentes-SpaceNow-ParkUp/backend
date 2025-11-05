@@ -1,6 +1,8 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.notification.application.internal.eventhandlers;
 
 import org.springframework.stereotype.Component;
+import org.springframework.context.event.EventListener;
+import pe.edu.upc.ParkUp.ParkUp_platform.payments.domain.model.events.PaymentCompletedEvent;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.commands.SendNotificationCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.valueobjects.NotificationChannel;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.domain.model.valueobjects.NotificationType;
@@ -23,19 +25,20 @@ public class PaymentEventHandlers {
      * Handles payment successful event
      * TODO: Implement @EventListener when event publishing is set up
      */
-    // @EventListener
-    public void onPaymentSuccessful(Object event) {
-        Long userId = 1L; // Get from event
-        Long paymentId = 200L; // Get from event
-        String amount = "$15.00"; // Get from event
-        
+    @EventListener
+    public void onPaymentSuccessful(PaymentCompletedEvent event) {
+        Long userId = event.getUserId();
+        Long paymentId = event.getPaymentId();
+        Long reservationId = event.getReservationId();
+        String amount = String.format("%.2f", event.getAmount());
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
                 NotificationType.PAYMENT_SUCCESS,
                 "Payment Successful",
-                "Your payment of " + amount + " has been processed successfully.",
-                "{\"paymentId\": " + paymentId + ", \"amount\": \"" + amount + "\"}"
+                "Your payment of $" + amount + " has been processed successfully.",
+                "{\"paymentId\": " + paymentId + ", \"reservationId\": " + reservationId + ", \"amount\": \"$" + amount + "\"}"
         );
         notificationCommandService.handle(command);
     }
@@ -43,9 +46,9 @@ public class PaymentEventHandlers {
     /**
      * Handles payment failed event
      */
-    // @EventListener
+    @EventListener
     public void onPaymentFailed(Object event) {
-        Long userId = 1L; // Get from event
+        Long userId = 1L; // Get from event (no domain event modelled for failures yet)
         Long paymentId = 200L; // Get from event
         String reason = "Insufficient funds"; // Get from event
         
@@ -63,9 +66,9 @@ public class PaymentEventHandlers {
     /**
      * Handles refund processed event
      */
-    // @EventListener
+    @EventListener
     public void onRefundProcessed(Object event) {
-        Long userId = 1L; // Get from event
+        Long userId = 1L; // Get from event (no refund event modelled yet)
         Long refundId = 300L; // Get from event
         String amount = "$15.00"; // Get from event
         
