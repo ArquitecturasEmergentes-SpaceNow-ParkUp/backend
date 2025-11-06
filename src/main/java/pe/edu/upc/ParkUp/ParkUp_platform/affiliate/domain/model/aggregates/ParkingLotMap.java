@@ -2,9 +2,12 @@ package pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.aggregates;
 
 
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.MapId;
+import pe.edu.upc.ParkUp.ParkUp_platform.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 
-
-public class ParkingLotMap {
+/**
+ * Represents a map attached to a ParkingLot.
+ */
+public class ParkingLotMap extends AuditableAbstractAggregateRoot<ParkingLotMap> {
     public enum MapStatus { DRAFT, SUBMITTED, ACCEPTED, REJECTED }
 
     private final MapId id;
@@ -16,7 +19,7 @@ public class ParkingLotMap {
         this.layout = layout;
     }
 
-    public MapId getId() { return id; }
+    public MapId getMapId() { return id; }
     public MapLayout getLayout() { return layout; }
     public MapStatus getStatus() { return status; }
 

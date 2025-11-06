@@ -1,13 +1,26 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.entities;
 
 
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import pe.edu.upc.ParkUp.ParkUp_platform.shared.domain.model.entities.AuditableModel;
-
+@Entity
+@Table(name = "parking_spaces")
+@Getter
+@Setter
 public class ParkingSpace extends AuditableModel {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String code;
     private boolean disability;
     private SpaceStatus status = SpaceStatus.AVAILABLE;
+
+    public ParkingSpace() {
+
+    }
 
     public enum SpaceStatus { AVAILABLE, OCCUPIED, RESERVED }
 
