@@ -1,4 +1,4 @@
-package pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.services;
+package pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services;
 
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.aggregates.ParkingLot;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.queries.GetAllParkingLotsQuery;
