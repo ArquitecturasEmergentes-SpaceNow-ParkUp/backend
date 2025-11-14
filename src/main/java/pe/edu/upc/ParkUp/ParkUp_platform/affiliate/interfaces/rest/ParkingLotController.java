@@ -19,9 +19,16 @@ import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingLotQue
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.AddParkingLotMapResource;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.CreateParkingLotResource;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.EditParkingLotMapResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.ImportParkingSpacesResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.UpdateParkingSpaceStatusResource;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.AddParkingLotMapCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.CreateParkingLotCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.EditParkingLotMapCommandFromResourceAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.ImportParkingSpacesCommandFromResourceAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.UpdateParkingSpaceStatusCommandFromResourceAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingSpaceCommandService;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingSpaceQueryService;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.entities.ParkingSpace;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,11 +40,17 @@ public class ParkingLotController {
 
     private final ParkingLotCommandService commandService;
     private final ParkingLotQueryService queryService;
+    private final ParkingSpaceCommandService spaceCommandService;
+    private final ParkingSpaceQueryService spaceQueryService;
 
     public ParkingLotController(ParkingLotCommandService commandService,
-                                ParkingLotQueryService queryService) {
+                                ParkingLotQueryService queryService,
+                                ParkingSpaceCommandService spaceCommandService,
+                                ParkingSpaceQueryService spaceQueryService) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.spaceCommandService = spaceCommandService;
+        this.spaceQueryService = spaceQueryService;
     }
 
     @PostMapping
@@ -103,6 +116,52 @@ public class ParkingLotController {
             throw ex;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al editar mapa", ex);
+        }
+    }
+
+    @PostMapping("/maps/{mapId}/spaces/import")
+    public ResponseEntity<List<ParkingSpace>> importParkingSpaces(
+            @PathVariable("mapId") Long mapId,
+            @Valid @RequestBody ImportParkingSpacesResource resource) {
+        try {
+            if (resource.getMapId() != null && !resource.getMapId().equals(mapId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mapId en path y body no coinciden");
+            }
+            resource.setMapId(mapId);
+            var command = ImportParkingSpacesCommandFromResourceAssembler.toCommand(resource);
+            var saved = spaceCommandService.handle(command);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al importar espacios", ex);
+        }
+    }
+
+    @GetMapping("/maps/{mapId}/spaces")
+    public ResponseEntity<List<ParkingSpace>> listParkingSpaces(@PathVariable("mapId") Long mapId) {
+        var spaces = spaceQueryService.getByMapId(mapId);
+        return ResponseEntity.ok(spaces);
+    }
+
+    @PutMapping("/maps/{mapId}/spaces/{spaceId}/status")
+    public ResponseEntity<ParkingSpace> updateParkingSpaceStatus(
+            @PathVariable("mapId") Long mapId,
+            @PathVariable("spaceId") Long spaceId,
+            @Valid @RequestBody UpdateParkingSpaceStatusResource resource) {
+        try {
+            var command = UpdateParkingSpaceStatusCommandFromResourceAssembler.toCommand(spaceId, resource);
+            var updated = spaceCommandService.handle(command);
+            if (!updated.getMap().getId().equals(mapId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "spaceId no pertenece al mapId indicado");
+            }
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar estado", ex);
         }
     }
 }
