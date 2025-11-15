@@ -29,7 +29,7 @@ public class ParkingSpaceCommandServiceImpl implements ParkingSpaceCommandServic
 
     @Override
     public List<ParkingSpace> handle(ImportParkingSpacesCommand command) {
-        var map = parkingLotMapRepository.findById(new pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.MapId(command.mapId()))
+        var map = parkingLotMapRepository.findById(command.mapId())
                 .orElseThrow(() -> new IllegalArgumentException("ParkingLotMap no encontrado"));
 
         List<ParkingSpace> saved = new ArrayList<>();

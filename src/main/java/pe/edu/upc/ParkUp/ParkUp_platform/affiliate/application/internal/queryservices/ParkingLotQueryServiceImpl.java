@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.aggregates.ParkingLot;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.queries.GetAllParkingLotsQuery;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.queries.GetParkingLotByIdQuery;
-import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.ParkingLotId;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingLotQueryService;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.infrastructure.persistence.jpa.repositories.ParkingLotRepository;
 
@@ -27,7 +26,7 @@ public class ParkingLotQueryServiceImpl implements ParkingLotQueryService {
     public Optional<ParkingLot> handle(GetParkingLotByIdQuery query) {
         Objects.requireNonNull(query, "GetParkingLotByIdQuery no puede ser null");
         Long id = Objects.requireNonNull(query.parkingLotId(), "parkingLotId no puede ser null");
-        return parkingLotRepository.findById(new ParkingLotId(id));
+        return parkingLotRepository.findById(id);
     }
 
     @Override

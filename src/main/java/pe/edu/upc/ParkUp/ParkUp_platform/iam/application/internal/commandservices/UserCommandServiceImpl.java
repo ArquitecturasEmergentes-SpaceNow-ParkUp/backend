@@ -7,6 +7,8 @@ import pe.edu.upc.ParkUp.ParkUp_platform.iam.application.internal.outboundservic
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.aggregates.User;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.SignInCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.SignUpCommand;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.entities.Role;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.valueobjects.Roles;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.services.UserCommandService;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.infrastructure.persistence.jpa.repositories.UserRepository;
@@ -71,11 +73,18 @@ public class UserCommandServiceImpl implements UserCommandService {
     if (userRepository.existsByEmail(command.email()))
       throw new RuntimeException("Username already exists");
     var roles = command.roles().stream()
-        .map(role ->
-            roleRepository.findByName(role.getName())
+        .map(roleName ->
+            roleRepository.findByName(Roles.valueOf(roleName))
                 .orElseThrow(() -> new RuntimeException("Role name not found")))
         .toList();
-    var user = new User(command.email(), hashingService.encode(command.password()), roles);
+    
+    // Create user without roles first
+    var user = new User(command.email(), hashingService.encode(command.password()));
+    
+    // Add the persistent roles to the user
+    user.addRoles(roles);
+    
+    // Save and return
     userRepository.save(user);
     return userRepository.findByEmail(command.email());
   }

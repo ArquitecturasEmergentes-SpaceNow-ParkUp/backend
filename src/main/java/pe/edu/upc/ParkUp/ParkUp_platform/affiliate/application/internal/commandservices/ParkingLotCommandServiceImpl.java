@@ -7,9 +7,7 @@ import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.entities.Parking
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.commands.AddParkingLotMapCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.commands.CreateParkingLotCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.commands.EditParkingLotMapCommand;
-import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.MapId;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.MapLayout;
-import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects.ParkingLotId;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingLotCommandService;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.infrastructure.persistence.jpa.repositories.ParkingLotMapRepository;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.infrastructure.persistence.jpa.repositories.ParkingLotRepository;
@@ -74,10 +72,10 @@ public class ParkingLotCommandServiceImpl implements ParkingLotCommandService {
         Objects.requireNonNull(command, "AddParkingLotMapCommand no puede ser null");
 
         // Validar existencia del parking lot destino
-        ParkingLotId plIdVo = new ParkingLotId(Objects.requireNonNull(command.parkingLotId(), "parkingLotId no puede ser null"));
-        Optional<ParkingLot> maybeParkingLot = parkingLotRepository.findById(plIdVo);
+        Long parkingLotId = Objects.requireNonNull(command.parkingLotId(), "parkingLotId no puede ser null");
+        Optional<ParkingLot> maybeParkingLot = parkingLotRepository.findById(parkingLotId);
         if (maybeParkingLot.isEmpty()) {
-            throw new IllegalArgumentException("No existe ParkingLot con id: " + plIdVo.getValue());
+            throw new IllegalArgumentException("No existe ParkingLot con id: " + parkingLotId);
         }
         ParkingLot parkingLot = maybeParkingLot.get();
 
@@ -100,10 +98,10 @@ public class ParkingLotCommandServiceImpl implements ParkingLotCommandService {
         Objects.requireNonNull(command, "EditParkingLotMapCommand no puede ser null");
 
         // Buscar el mapa por su MapId
-        MapId mapIdVo = new MapId(Objects.requireNonNull(command.mapId(), "mapId no puede ser null"));
-        Optional<ParkingLotMap> maybeMap = parkingLotMapRepository.findById(mapIdVo);
+        Long mapId = Objects.requireNonNull(command.mapId(), "mapId no puede ser null");
+        Optional<ParkingLotMap> maybeMap = parkingLotMapRepository.findById(mapId);
         if (maybeMap.isEmpty()) {
-            throw new IllegalArgumentException("ParkingLotMap con id " + mapIdVo.getValue() + " no encontrado");
+            throw new IllegalArgumentException("ParkingLotMap con id " + mapId + " no encontrado");
         }
         ParkingLotMap existing = maybeMap.get();
 
