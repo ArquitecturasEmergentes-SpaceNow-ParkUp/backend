@@ -44,16 +44,15 @@ public class UserCommandServiceImpl implements UserCommandService {
    *     This method handles the {@link SignInCommand} command and returns the user and the token.
    * </p>
    * @param command the sign-in command containing the email and password
-   * @return and optional containing the user matching the email and the generated token
-   * @throws RuntimeException if the user is not found or the password is invalid
+   * @return an optional containing the user matching the email and the generated token, or empty if credentials are invalid
    */
   @Override
   public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
     var user = userRepository.findByEmail(command.email());
     if (user.isEmpty())
-      throw new RuntimeException("User not found");
+      return Optional.empty();
     if (!hashingService.matches(command.password(), user.get().getPassword()))
-      throw new RuntimeException("Invalid password");
+      return Optional.empty();
 
     var token = tokenService.generateToken(user.get().getEmail());
     return Optional.of(ImmutablePair.of(user.get(), token));
