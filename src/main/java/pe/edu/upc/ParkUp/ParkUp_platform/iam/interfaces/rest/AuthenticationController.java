@@ -53,7 +53,7 @@ public class AuthenticationController {
         .toCommandFromResource(signInResource);
     var authenticatedUser = userCommandService.handle(signInCommand);
     if (authenticatedUser.isEmpty()) {
-      return ResponseEntity.notFound().build();
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler

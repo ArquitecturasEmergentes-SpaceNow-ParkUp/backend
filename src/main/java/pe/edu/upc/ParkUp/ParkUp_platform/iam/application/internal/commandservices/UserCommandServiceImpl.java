@@ -7,6 +7,8 @@ import pe.edu.upc.ParkUp.ParkUp_platform.iam.application.internal.outboundservic
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.aggregates.User;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.SignInCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.SignUpCommand;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.entities.Role;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.valueobjects.Roles;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.services.UserCommandService;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.infrastructure.persistence.jpa.repositories.UserRepository;
@@ -44,16 +46,15 @@ public class UserCommandServiceImpl implements UserCommandService {
    *     This method handles the {@link SignInCommand} command and returns the user and the token.
    * </p>
    * @param command the sign-in command containing the email and password
-   * @return and optional containing the user matching the email and the generated token
-   * @throws RuntimeException if the user is not found or the password is invalid
+   * @return an optional containing the user matching the email and the generated token, or empty if credentials are invalid
    */
   @Override
   public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
     var user = userRepository.findByEmail(command.email());
     if (user.isEmpty())
-      throw new RuntimeException("User not found");
+      return Optional.empty();
     if (!hashingService.matches(command.password(), user.get().getPassword()))
-      throw new RuntimeException("Invalid password");
+      return Optional.empty();
 
     var token = tokenService.generateToken(user.get().getEmail());
     return Optional.of(ImmutablePair.of(user.get(), token));
@@ -72,11 +73,18 @@ public class UserCommandServiceImpl implements UserCommandService {
     if (userRepository.existsByEmail(command.email()))
       throw new RuntimeException("Username already exists");
     var roles = command.roles().stream()
-        .map(role ->
-            roleRepository.findByName(role.getName())
+        .map(roleName ->
+            roleRepository.findByName(Roles.valueOf(roleName))
                 .orElseThrow(() -> new RuntimeException("Role name not found")))
         .toList();
-    var user = new User(command.email(), hashingService.encode(command.password()), roles);
+    
+    // Create user without roles first
+    var user = new User(command.email(), hashingService.encode(command.password()));
+    
+    // Add the persistent roles to the user
+    user.addRoles(roles);
+    
+    // Save and return
     userRepository.save(user);
     return userRepository.findByEmail(command.email());
   }

@@ -3,6 +3,7 @@ package pe.edu.upc.ParkUp.ParkUp_platform.reservation.application.internal.comma
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.application.internal.outboundservices.NotificationService;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.acl.AffiliateContextFacade;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.aggregates.Reservation;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.commands.*;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.services.ReservationCommandService;
@@ -19,11 +20,14 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 
     private final ReservationRepository reservationRepository;
     private final NotificationService notificationService;
+    private final AffiliateContextFacade affiliateContextFacade;
 
     public ReservationCommandServiceImpl(ReservationRepository reservationRepository,
-                                        NotificationService notificationService) {
+                                        NotificationService notificationService,
+                                        AffiliateContextFacade affiliateContextFacade) {
         this.reservationRepository = reservationRepository;
         this.notificationService = notificationService;
+        this.affiliateContextFacade = affiliateContextFacade;
     }
 
     @Override
@@ -73,6 +77,10 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         reservation.cancel();
         var savedReservation = reservationRepository.save(reservation);
 
+        try {
+            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingLotId());
+        } catch (Exception ignored) {}
+
         // Send cancellation notification
         notificationService.sendReservationCancelledNotification(
                 savedReservation.getUserId(),
@@ -91,6 +99,10 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         // Confirm payment
         reservation.confirmPayment();
         var savedReservation = reservationRepository.save(reservation);
+
+        try {
+            affiliateContextFacade.reserveSpace(savedReservation.getParkingSlotId().getParkingLotId());
+        } catch (Exception ignored) {}
 
         // Send WhatsApp notification (don't fail if notification fails)
         try {
@@ -121,6 +133,10 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         reservation.start();
         var savedReservation = reservationRepository.save(reservation);
 
+        try {
+            affiliateContextFacade.occupySpace(savedReservation.getParkingSlotId().getParkingLotId());
+        } catch (Exception ignored) {}
+
         // TODO: Publish domain event using Spring ApplicationEventPublisher
         // - ReservationStartedEvent (for Notifications BC)
 
@@ -141,6 +157,10 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         // Complete reservation
         reservation.complete();
         var savedReservation = reservationRepository.save(reservation);
+
+        try {
+            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingLotId());
+        } catch (Exception ignored) {}
 
         // TODO: Publish domain event using Spring ApplicationEventPublisher
         // - ReservationCompletedEvent (for Payments BC - final charge)
