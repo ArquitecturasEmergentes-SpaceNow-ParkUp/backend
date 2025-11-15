@@ -1,6 +1,6 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.extraordinariesCases.interfaces.rest;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,12 +34,19 @@ public class ExtraordinaryCaseController {
     // POST /api/v1/extraordinary-cases
     @PostMapping
     public ResponseEntity<ExtraordinaryCaseResource> createExtraordinaryCase(@RequestBody CreateExtraordinaryCaseResource resource) {
+
+        // --- PASO DE DIAGNÓSTICO ---
+        // Imprime el resource para ver si Jackson lo está populando correctamente
+        System.out.println("--- DATOS RECIBIDOS EN EL RESOURCE: " + resource + " ---");
+
         var createCaseCommand = CreateExtraordinaryCaseCommandFromResourceAssembler.toCommandFromResource(resource);
+        System.out.println("--- DATOS RECIBIDOS EN EL COMANDO: " + createCaseCommand.toString() + " ---");
+
         var extraordinaryCase = extraordinaryCaseCommandService.handle(createCaseCommand)
                 .orElseThrow(() -> new RuntimeException("Error creating extraordinary case"));
+
         return new ResponseEntity<>(ExtraordinaryCaseResourceFromEntityAssembler.toResourceFromEntity(extraordinaryCase), HttpStatus.CREATED);
     }
-
     // GET /api/v1/extraordinary-cases
     @GetMapping
     public ResponseEntity<List<ExtraordinaryCaseResource>> getAllExtraordinaryCases() {

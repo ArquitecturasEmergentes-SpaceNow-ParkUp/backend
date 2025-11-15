@@ -23,6 +23,7 @@ public class ExtraordinaryCaseCommandServiceImpl implements ExtraordinaryCaseCom
     @Override
     public Optional<ExtraordinaryCase> handle(CreateExtraordinaryCaseCommand command) {
         // Aquí irían validaciones
+
         var extraordinaryCase = new ExtraordinaryCase(command);
         extraordinaryCaseRepository.save(extraordinaryCase);
         return Optional.of(extraordinaryCase);
