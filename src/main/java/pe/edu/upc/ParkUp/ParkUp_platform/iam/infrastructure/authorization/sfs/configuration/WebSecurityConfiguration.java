@@ -92,9 +92,10 @@ public class WebSecurityConfiguration {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(corsConfigurer -> corsConfigurer.configurationSource( request -> {
       var cors = new CorsConfiguration();
-      cors.setAllowedOrigins(List.of("*"));
+      cors.setAllowedOrigins(List.of("http://localhost:3000"));
       cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
       cors.setAllowedHeaders(List.of("*"));
+      cors.setAllowCredentials(true);
       return cors;
     } ));
     http.csrf(csrfConfigurer -> csrfConfigurer.disable())
@@ -112,6 +113,7 @@ public class WebSecurityConfiguration {
                 "/v3/api-docs/**", "/swagger-ui.html",
                 "/swagger-ui/**", "/swagger-resources/**", "/webjars/**")
                 .permitAll()
+                .requestMatchers("/api/logs/**").hasRole("ADMIN")
                 .anyRequest()
                 .authenticated());
     http.authenticationProvider(authenticationProvider());

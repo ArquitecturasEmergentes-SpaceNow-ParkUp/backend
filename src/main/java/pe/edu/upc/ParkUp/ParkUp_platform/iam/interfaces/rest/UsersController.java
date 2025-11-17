@@ -3,15 +3,23 @@ package pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.rest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.queries.GetAllUsersQuery;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.queries.GetUserByIdQuery;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.queries.GetUserByEmailQuery;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.services.UserQueryService;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.rest.resources.UserResource;
 import pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.profile.domain.model.queries.GetUserProfileByUserIdQuery;
+import pe.edu.upc.ParkUp.ParkUp_platform.profile.domain.services.UserProfileQueryService;
+import pe.edu.upc.ParkUp.ParkUp_platform.profile.interfaces.rest.resources.UserProfileResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.profile.interfaces.rest.transform.UserProfileResourceFromEntityAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.rest.resources.CurrentUserResource;
 
 import java.util.List;
 
@@ -27,9 +35,12 @@ import java.util.List;
 public class UsersController {
 
   private final UserQueryService userQueryService;
+  private final UserProfileQueryService userProfileQueryService;
 
-  public UsersController(UserQueryService userQueryService) {
+  public UsersController(UserQueryService userQueryService,
+                         UserProfileQueryService userProfileQueryService) {
     this.userQueryService = userQueryService;
+    this.userProfileQueryService = userProfileQueryService;
   }
 
   /**
@@ -65,5 +76,34 @@ public class UsersController {
     }
     var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
     return ResponseEntity.ok(userResource);
+  }
+
+  /**
+   * Returns the currently authenticated user with optional profile information.
+   * @return CurrentUserResource containing id, email, roles and profile if available
+   */
+  @GetMapping(value = "/me")
+  public ResponseEntity<CurrentUserResource> getCurrentUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || authentication.getName() == null) {
+      return ResponseEntity.status(401).build();
+    }
+
+    var userOpt = userQueryService.handle(new GetUserByEmailQuery(authentication.getName()));
+    if (userOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+    var user = userOpt.get();
+    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+
+    UserProfileResource profileResource = null;
+    var profileOpt = userProfileQueryService.handle(new GetUserProfileByUserIdQuery(user.getId()));
+    if (profileOpt.isPresent()) {
+      profileResource = UserProfileResourceFromEntityAssembler.toResourceFromEntity(profileOpt.get());
+    }
+
+    var currentUser = new CurrentUserResource(
+        userResource.id(), userResource.email(), userResource.roles(), profileResource);
+    return ResponseEntity.ok(currentUser);
   }
 }
