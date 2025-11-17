@@ -11,6 +11,9 @@ import pe.edu.upc.ParkUp.ParkUp_platform.logs.interfaces.rest.resources.LogResou
 import pe.edu.upc.ParkUp.ParkUp_platform.logs.interfaces.rest.transform.CreateLogCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.logs.interfaces.rest.transform.LogResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -24,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/logs")
-@Tag(name = "Logs", description = "Admin Logs Management Endpoints")
+@Tag(name = "Logs", description = "Admin Logs Management Endpoints — endpoints to query, create and inspect system audit logs. Allowed sort properties: id, timestamp, action, username, user_email, user_id, status, resource_type.")
 public class LogController {
     
     private final LogCommandService logCommandService;
@@ -37,6 +40,11 @@ public class LogController {
     
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get logs", description = "Retrieve a pageable list of admin logs with optional filters (action, username, status, dates, search). Sorting is supported via the `sort` query parameter.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Logs returned successfully"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN role")
+    })
     public ResponseEntity<Page<LogResource>> getAllLogs(
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String username,
@@ -115,6 +123,12 @@ public class LogController {
     
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get log by id", description = "Retrieve a single admin log entry by its id.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Log found"),
+        @ApiResponse(responseCode = "404", description = "Log not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN role")
+    })
     public ResponseEntity<LogResource> getLogById(@PathVariable Long id) {
         GetLogByIdQuery query = new GetLogByIdQuery(id);
         
@@ -126,6 +140,11 @@ public class LogController {
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create a log entry", description = "Create a log entry (this endpoint is typically used for tests or admin-triggered logs).")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Log created"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - requires ADMIN role")
+    })
     public ResponseEntity<LogResource> createLog(@RequestBody CreateLogResource resource) {
         CreateLogCommand command = CreateLogCommandFromResourceAssembler.toCommandFromResource(resource);
         Log log = logCommandService.handle(command);

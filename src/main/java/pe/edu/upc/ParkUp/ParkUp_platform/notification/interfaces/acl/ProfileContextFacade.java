@@ -1,5 +1,7 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.notification.interfaces.acl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import pe.edu.upc.ParkUp.ParkUp_platform.profile.domain.model.queries.GetUserProfileByUserIdQuery;
 import pe.edu.upc.ParkUp.ParkUp_platform.profile.domain.services.UserProfileQueryService;
@@ -12,6 +14,8 @@ import java.util.Optional;
  */
 @Service
 public class ProfileContextFacade {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProfileContextFacade.class);
 
     private final UserProfileQueryService userProfileQueryService;
 
@@ -46,7 +50,12 @@ public class ProfileContextFacade {
         
         return profile.map(userProfile -> 
             userProfile.getNotificationsEnabled()
-        ).orElse(false);
+        ).orElseGet(() -> {
+            // If no profile exists (e.g., during early boot or missing profile) treat notifications as enabled by default.
+            // This aligns with the expectation that notifications are 'on' for users unless explicitly toggled off.
+            LOGGER.warn("Profile not found for user {} — defaulting notifications to ENABLED", userId);
+            return true;
+        });
     }
 
     /**
@@ -76,7 +85,7 @@ public class ProfileContextFacade {
         
         return profile.map(userProfile -> 
             userProfile.getEmailNotificationsEnabled()
-        ).orElse(false);
+        ).orElse(true);
     }
 
     /**

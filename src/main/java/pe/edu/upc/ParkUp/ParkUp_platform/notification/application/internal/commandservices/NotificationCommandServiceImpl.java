@@ -1,5 +1,7 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.notification.application.internal.commandservices;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.ParkUp.ParkUp_platform.notification.application.internal.outboundservices.EmailNotificationProvider;
@@ -21,6 +23,8 @@ import java.util.Optional;
  */
 @Service
 public class NotificationCommandServiceImpl implements NotificationCommandService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NotificationCommandServiceImpl.class);
 
     private final NotificationLogRepository notificationLogRepository;
     private final UserDeviceRepository userDeviceRepository;
@@ -48,7 +52,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     public Optional<NotificationLog> handle(SendNotificationCommand command) {
         // Check if user has notifications enabled
         if (!profileContextFacade.areNotificationsEnabled(command.userId())) {
-            System.out.println("⚠️ Notifications disabled for user " + command.userId());
+            LOGGER.warn("Notifications disabled for user {}", command.userId());
             // Still create log but mark as skipped
             var notificationLog = new NotificationLog(
                     command.userId(),
@@ -162,7 +166,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
         var devices = userDeviceRepository.findByUserIdAndIsActive(userId, true);
         
         if (devices.isEmpty()) {
-            System.out.println("No active devices found for user " + userId);
+            LOGGER.info("No active devices found for user {}", userId);
             return null;
         }
 
@@ -174,7 +178,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     private String sendEmailNotification(Long userId, String subject, String message) {
         // Check if user has email notifications enabled
         if (!profileContextFacade.areEmailNotificationsEnabled(userId)) {
-            System.out.println("⚠️ Email notifications disabled for user " + userId);
+            LOGGER.warn("Email notifications disabled for user {}", userId);
             return null;
         }
 
@@ -187,7 +191,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     private String sendWhatsAppNotification(Long userId, String message) {
         // Check if user has SMS/WhatsApp notifications enabled
         if (!profileContextFacade.areSmsNotificationsEnabled(userId)) {
-            System.out.println("⚠️ SMS/WhatsApp notifications disabled for user " + userId);
+            LOGGER.warn("SMS/WhatsApp notifications disabled for user {}", userId);
             return null;
         }
 
@@ -195,12 +199,12 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
         var phoneNumberOpt = profileContextFacade.getUserPhoneNumber(userId);
         
         if (phoneNumberOpt.isEmpty()) {
-            System.err.println("❌ No phone number found for user " + userId);
+            LOGGER.error("No phone number found for user {}", userId);
             return null;
         }
 
         String phoneNumber = phoneNumberOpt.get();
-        System.out.println("📱 Sending WhatsApp to: " + phoneNumber);
+        LOGGER.info("Sending WhatsApp message to {}", phoneNumber);
         
         return whatsAppProvider.sendWhatsApp(phoneNumber, message);
     }

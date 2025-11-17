@@ -141,11 +141,11 @@ public class ReservationEventHandlers {
      * Handles reservation expired event
      */
     @EventListener
-    public void onReservationExpired(Object event) {
-        // No explicit ReservationExpiredEvent defined in domain; keep as generic listener for now
-        Long userId = 1L; // Keep placeholder until an event is modeled
-        Long reservationId = 100L; // Keep placeholder until an event is modeled
-        
+    public void onReservationExpired(pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationExpiredEvent event) {
+        // Handle only explicit ReservationExpiredEvent so that we don't receive every Spring application event
+        Long userId = event.getUserId();
+        Long reservationId = event.getReservationId();
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
