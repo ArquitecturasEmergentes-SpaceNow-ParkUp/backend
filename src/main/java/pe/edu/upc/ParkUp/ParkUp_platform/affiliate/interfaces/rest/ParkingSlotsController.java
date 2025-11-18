@@ -41,13 +41,17 @@ public class ParkingSlotsController {
         var last = maps.get(maps.size() - 1);
         var spaces = spaceQueryService.getByMapId(last.getId());
 
-        List<ParkingSlotResource> resources = spaces.stream().map(space -> new ParkingSlotResource(
+        List<ParkingSlotResource> resources = spaces.stream().map(space -> {
+            ParkingSlotResource r = new ParkingSlotResource(
                 space.getId(),
                 space.getCode(),
                 space.isDisability(),
                 space.getStatus().name(),
                 lot.getId()
-        )).collect(Collectors.toList());
+            );
+            r.setSlotNumber(space.getCode());
+            return r;
+        }).collect(Collectors.toList());
 
         return ResponseEntity.ok(resources);
     }

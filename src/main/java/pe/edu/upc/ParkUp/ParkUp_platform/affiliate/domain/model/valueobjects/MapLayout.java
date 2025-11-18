@@ -1,7 +1,7 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.valueobjects;
 
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.Lob;
+ 
 import jakarta.persistence.Column;
 
 import java.util.ArrayList;
@@ -17,7 +17,6 @@ public class MapLayout {
 
     private int totalSpaces;
     private int disabilitySpaces;
-    @Lob
     @Column(name = "layout_json", columnDefinition = "text")
     private String layoutJson;
 
