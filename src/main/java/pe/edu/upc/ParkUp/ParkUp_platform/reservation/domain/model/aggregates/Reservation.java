@@ -57,7 +57,7 @@ public class Reservation extends AuditableAbstractAggregateRoot<Reservation> {
      * @param startTime      The planned start time of the reservation
      * @param endTime        The planned end time of the reservation
      */
-    public Reservation(Long userId, Long parkingLotId, LocalDateTime startTime, LocalDateTime endTime) {
+    public Reservation(Long userId, Long parkingLotId, Long parkingSpaceId, LocalDateTime startTime, LocalDateTime endTime) {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("User ID must be a positive number");
         }
@@ -72,7 +72,7 @@ public class Reservation extends AuditableAbstractAggregateRoot<Reservation> {
         }
 
         this.userId = userId;
-        this.parkingSlotId = new ParkingSlotId(parkingLotId);
+        this.parkingSlotId = new ParkingSlotId(parkingLotId, parkingSpaceId);
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = ReservationStatus.PENDING_PAYMENT;

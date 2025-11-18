@@ -35,9 +35,9 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
     public Optional<Reservation> handle(CreateReservationCommand command) {
         // Validate availability - check for conflicting reservations
         boolean hasConflict = reservationRepository.existsConflictingReservation(
-                command.parkingLotId(),
-                command.startTime(),
-                command.endTime()
+            command.parkingSlotId(),
+            command.startTime(),
+            command.endTime()
         );
 
         if (hasConflict) {
@@ -48,8 +48,9 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         var reservation = new Reservation(
                 command.userId(),
                 command.parkingLotId(),
-                command.startTime(),
-                command.endTime()
+                command.parkingSlotId(),
+            command.startTime(),
+            command.endTime()
         );
 
         // Save reservation
@@ -78,7 +79,7 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         var savedReservation = reservationRepository.save(reservation);
 
         try {
-            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingLotId());
+            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
         } catch (Exception ignored) {}
 
         // Send cancellation notification
@@ -101,7 +102,7 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         var savedReservation = reservationRepository.save(reservation);
 
         try {
-            affiliateContextFacade.reserveSpace(savedReservation.getParkingSlotId().getParkingLotId());
+            affiliateContextFacade.reserveSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
         } catch (Exception ignored) {}
 
         // Send WhatsApp notification (don't fail if notification fails)
@@ -134,7 +135,7 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         var savedReservation = reservationRepository.save(reservation);
 
         try {
-            affiliateContextFacade.occupySpace(savedReservation.getParkingSlotId().getParkingLotId());
+            affiliateContextFacade.occupySpace(savedReservation.getParkingSlotId().getParkingSpaceId());
         } catch (Exception ignored) {}
 
         // TODO: Publish domain event using Spring ApplicationEventPublisher
@@ -159,7 +160,7 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
         var savedReservation = reservationRepository.save(reservation);
 
         try {
-            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingLotId());
+            affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
         } catch (Exception ignored) {}
 
         // TODO: Publish domain event using Spring ApplicationEventPublisher

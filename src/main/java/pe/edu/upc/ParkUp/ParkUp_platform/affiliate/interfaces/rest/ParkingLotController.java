@@ -6,8 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.application.internal.queryservices.ParkingLotQueryServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+// removed unused import
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.aggregates.ParkingLot;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.ParkingLotSummaryResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.ParkingLotDetailResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.ParkingLotDetailResourceFromEntityAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.entities.ParkingLotMap;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.commands.AddParkingLotMapCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.model.commands.CreateParkingLotCommand;
@@ -23,7 +30,7 @@ import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.Imp
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.resources.UpdateParkingSpaceStatusResource;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.AddParkingLotMapCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.CreateParkingLotCommandFromResourceAssembler;
-import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.EditParkingLotMapCommandFromResourceAssembler;
+// removed unused import
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.ImportParkingSpacesCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.interfaces.rest.transform.UpdateParkingSpaceStatusCommandFromResourceAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.affiliate.domain.services.ParkingSpaceCommandService;
@@ -38,19 +45,24 @@ import java.util.Optional;
 @RequestMapping("/api/affiliate/parking-lots")
 public class ParkingLotController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParkingLotController.class);
+
     private final ParkingLotCommandService commandService;
     private final ParkingLotQueryService queryService;
     private final ParkingSpaceCommandService spaceCommandService;
     private final ParkingSpaceQueryService spaceQueryService;
+    private final ParkingLotDetailResourceFromEntityAssembler parkingLotDetailResourceFromEntityAssembler;
 
     public ParkingLotController(ParkingLotCommandService commandService,
                                 ParkingLotQueryService queryService,
                                 ParkingSpaceCommandService spaceCommandService,
-                                ParkingSpaceQueryService spaceQueryService) {
+                                ParkingSpaceQueryService spaceQueryService,
+                                ParkingLotDetailResourceFromEntityAssembler parkingLotDetailResourceFromEntityAssembler) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.spaceCommandService = spaceCommandService;
         this.spaceQueryService = spaceQueryService;
+        this.parkingLotDetailResourceFromEntityAssembler = parkingLotDetailResourceFromEntityAssembler;
     }
 
     @PostMapping
@@ -67,15 +79,23 @@ public class ParkingLotController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ParkingLot>> getAllParkingLots() {
+    public ResponseEntity<List<ParkingLotSummaryResource>> getAllParkingLots() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUser = auth != null ? String.valueOf(auth.getName()) : "anonymous";
         List<ParkingLot> all = queryService.handle(new GetAllParkingLotsQuery());
-        return ResponseEntity.ok(all);
+        LOGGER.info("User '{}' requested /api/affiliate/parking-lots; returning {} lot(s)", currentUser, all.size());
+        List<ParkingLotSummaryResource> summary = all.stream()
+            .map(l -> new ParkingLotSummaryResource(l.getId(), l.getName(), l.getAddress()))
+            .toList();
+        return ResponseEntity.ok().header("X-Total-Parking-Lots", String.valueOf(summary.size())).body(summary);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ParkingLot> getParkingLotById(@PathVariable("id") Long id) {
+    public ResponseEntity<ParkingLotDetailResource> getParkingLotById(@PathVariable("id") Long id) {
         Optional<ParkingLot> maybe = queryService.handle(new GetParkingLotByIdQuery(id));
-        return maybe.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        if (maybe.isEmpty()) return ResponseEntity.notFound().build();
+        var resource = parkingLotDetailResourceFromEntityAssembler.toResource(maybe.get());
+        return ResponseEntity.ok(resource);
     }
 
     @PostMapping("/maps")
@@ -83,6 +103,9 @@ public class ParkingLotController {
         try {
             AddParkingLotMapCommand command = AddParkingLotMapCommandFromResourceAssembler.toCommand(resource);
             ParkingLotMap saved = commandService.handle(command);
+            if (saved != null && saved.getLayout() != null && saved.getLayout().getLayoutJson() != null) {
+                LOGGER.debug("Map added for parking lot {} layout length={}", resource.getParkingLotId(), saved.getLayout().getLayoutJson().length());
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -109,6 +132,9 @@ public class ParkingLotController {
                     resource.getNewDisabilitySpaces()
             );
             ParkingLotMap updated = commandService.handle(command);
+                if (updated != null && updated.getLayout() != null && updated.getLayout().getLayoutJson() != null) {
+                    LOGGER.debug("Map edited for map {} layout length={}", mapId, updated.getLayout().getLayoutJson().length());
+                }
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

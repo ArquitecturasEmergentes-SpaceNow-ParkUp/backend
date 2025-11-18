@@ -16,10 +16,11 @@ public class CreateReservationCommandFromResourceAssembler {
      */
     public static CreateReservationCommand toCommandFromResource(CreateReservationRequest resource) {
         return new CreateReservationCommand(
-                resource.userId(),
-                resource.parkingLotId(),
-                resource.startTime(),
-                resource.endTime()
+            resource.userId(),
+            resource.parkingLotId(),
+                resource.parkingSlotId(),
+            resource.startTime(),
+            resource.endTime()
         );
     }
 }

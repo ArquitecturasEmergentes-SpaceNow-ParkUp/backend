@@ -73,11 +73,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      * @param endTime      End time of the new reservation
      * @return true if there's a conflict
      */
-    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.parkingSlotId.parkingLotId = :parkingLotId " +
+        @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.parkingSlotId.parkingSpaceId = :parkingSlotId " +
             "AND r.status IN ('PENDING_PAYMENT', 'ACTIVE', 'IN_PROGRESS') " +
             "AND ((r.startTime < :endTime AND r.endTime > :startTime))")
     boolean existsConflictingReservation(
-            @Param("parkingLotId") Long parkingLotId,
+            @Param("parkingSlotId") Long parkingSlotId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );

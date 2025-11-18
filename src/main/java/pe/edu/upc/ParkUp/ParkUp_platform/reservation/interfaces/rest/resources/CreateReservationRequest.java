@@ -19,6 +19,7 @@ public record CreateReservationRequest(
 
         @NotNull(message = "Parking lot ID is required")
         Long parkingLotId,
+        Long parkingSlotId,
 
         @NotNull(message = "Start time is required")
         @Future(message = "Start time must be in the future")

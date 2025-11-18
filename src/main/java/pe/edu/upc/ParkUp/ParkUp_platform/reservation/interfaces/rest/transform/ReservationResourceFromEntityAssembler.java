@@ -16,9 +16,10 @@ public class ReservationResourceFromEntityAssembler {
      */
     public static ReservationResource toResourceFromEntity(Reservation entity) {
         return new ReservationResource(
-                entity.getId(),
-                entity.getUserId(),
-                entity.getParkingSlotId().getParkingLotId(),
+            entity.getId(),
+            entity.getUserId(),
+            entity.getParkingSlotId().getParkingSpaceId(),
+            entity.getParkingSlotId().getParkingLotId(),
                 entity.getStatus().name(),
                 entity.getStartTime(),
                 entity.getEndTime(),

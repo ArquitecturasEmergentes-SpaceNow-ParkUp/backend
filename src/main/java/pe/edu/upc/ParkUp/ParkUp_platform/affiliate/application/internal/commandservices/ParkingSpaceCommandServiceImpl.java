@@ -17,6 +17,7 @@ import java.util.Objects;
 @Service
 @Transactional
 public class ParkingSpaceCommandServiceImpl implements ParkingSpaceCommandService {
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ParkingSpaceCommandServiceImpl.class);
 
     private final ParkingSpaceRepository parkingSpaceRepository;
     private final ParkingLotMapRepository parkingLotMapRepository;
@@ -34,11 +35,25 @@ public class ParkingSpaceCommandServiceImpl implements ParkingSpaceCommandServic
 
         List<ParkingSpace> saved = new ArrayList<>();
         for (var item : command.items()) {
+            // Check for existing space to avoid duplicates
+            var maybe = parkingSpaceRepository.findByMapIdAndCode(command.mapId(), item.code());
+            if (maybe.isPresent()) {
+                var existing = maybe.get();
+                // update disability if changed
+                if (existing.isDisability() != item.disability()) {
+                    existing.setDisability(item.disability());
+                    saved.add(parkingSpaceRepository.save(existing));
+                }
+                continue;
+            }
             var space = new ParkingSpace(item.code(), item.disability(), map);
             saved.add(parkingSpaceRepository.save(space));
             map.getLayout().addSpaceCode(item.code());
         }
         parkingLotMapRepository.save(map);
+        if (!saved.isEmpty()) {
+            LOGGER.debug("Imported {} spaces into map {}", saved.size(), command.mapId());
+        }
         return saved;
     }
 

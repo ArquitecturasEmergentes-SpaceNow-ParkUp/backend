@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public record CreateReservationCommand(
         Long userId,
         Long parkingLotId,
+        Long parkingSlotId,
         LocalDateTime startTime,
         LocalDateTime endTime
 ) {

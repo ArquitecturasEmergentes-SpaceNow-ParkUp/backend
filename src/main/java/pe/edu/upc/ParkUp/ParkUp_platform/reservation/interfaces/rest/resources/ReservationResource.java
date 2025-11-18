@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public record ReservationResource(
         Long id,
         Long userId,
+        Long parkingSlotId,
         Long parkingLotId,
         String status,
         LocalDateTime startTime,
