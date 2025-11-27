@@ -21,13 +21,16 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
     private final ReservationRepository reservationRepository;
     private final NotificationService notificationService;
     private final AffiliateContextFacade affiliateContextFacade;
+    private final pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.acl.IamContextFacade iamContextFacade;
 
     public ReservationCommandServiceImpl(ReservationRepository reservationRepository,
-                                        NotificationService notificationService,
-                                        AffiliateContextFacade affiliateContextFacade) {
+            NotificationService notificationService,
+            AffiliateContextFacade affiliateContextFacade,
+            pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.acl.IamContextFacade iamContextFacade) {
         this.reservationRepository = reservationRepository;
         this.notificationService = notificationService;
         this.affiliateContextFacade = affiliateContextFacade;
+        this.iamContextFacade = iamContextFacade;
     }
 
     @Override
@@ -35,13 +38,21 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
     public Optional<Reservation> handle(CreateReservationCommand command) {
         // Validate availability - check for conflicting reservations
         boolean hasConflict = reservationRepository.existsConflictingReservation(
-            command.parkingSlotId(),
-            command.startTime(),
-            command.endTime()
-        );
+                command.parkingSlotId(),
+                command.startTime(),
+                command.endTime());
 
         if (hasConflict) {
             throw new IllegalStateException("Parking slot is not available for the selected time range");
+        }
+
+        // Validate disability requirements
+        boolean isSpaceDisabledOnly = affiliateContextFacade.isSpaceDisabledOnly(command.parkingSlotId());
+        if (isSpaceDisabledOnly) {
+            boolean isUserDisabled = iamContextFacade.isUserDisabled(command.userId());
+            if (!isUserDisabled) {
+                throw new IllegalStateException("This parking space is reserved for disabled users only.");
+            }
         }
 
         // Create new reservation
@@ -49,9 +60,8 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
                 command.userId(),
                 command.parkingLotId(),
                 command.parkingSlotId(),
-            command.startTime(),
-            command.endTime()
-        );
+                command.startTime(),
+                command.endTime());
 
         // Save reservation
         var savedReservation = reservationRepository.save(reservation);
@@ -80,13 +90,13 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 
         try {
             affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // Send cancellation notification
         notificationService.sendReservationCancelledNotification(
                 savedReservation.getUserId(),
-                savedReservation.getId()
-        );
+                savedReservation.getId());
 
         return Optional.of(savedReservation);
     }
@@ -103,14 +113,14 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 
         try {
             affiliateContextFacade.reserveSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // Send WhatsApp notification (don't fail if notification fails)
         try {
             notificationService.sendReservationConfirmedNotification(
-                    savedReservation.getUserId(), 
-                    savedReservation.getId()
-            );
+                    savedReservation.getUserId(),
+                    savedReservation.getId());
         } catch (Exception e) {
             System.err.println("Failed to send notification, but reservation was confirmed: " + e.getMessage());
         }
@@ -136,7 +146,8 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 
         try {
             affiliateContextFacade.occupySpace(savedReservation.getParkingSlotId().getParkingSpaceId());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // TODO: Publish domain event using Spring ApplicationEventPublisher
         // - ReservationStartedEvent (for Notifications BC)
@@ -161,7 +172,8 @@ public class ReservationCommandServiceImpl implements ReservationCommandService 
 
         try {
             affiliateContextFacade.releaseSpace(savedReservation.getParkingSlotId().getParkingSpaceId());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // TODO: Publish domain event using Spring ApplicationEventPublisher
         // - ReservationCompletedEvent (for Payments BC - final charge)

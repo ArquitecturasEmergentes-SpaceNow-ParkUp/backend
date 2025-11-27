@@ -7,7 +7,12 @@ import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.SignUpCommand
 
 import java.util.Optional;
 
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.UpdateUserDisabilityStatusCommand;
+
 public interface UserCommandService {
   Optional<ImmutablePair<User, String>> handle(SignInCommand command);
+
   Optional<User> handle(SignUpCommand command);
+
+  Optional<User> handle(UpdateUserDisabilityStatusCommand command);
 }

@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface ParkingSpaceQueryService {
     List<ParkingSpace> getByMapId(Long mapId);
-}
 
+    java.util.Optional<ParkingSpace> getById(Long id);
+}

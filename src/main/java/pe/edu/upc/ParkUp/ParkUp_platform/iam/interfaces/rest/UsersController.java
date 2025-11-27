@@ -33,13 +33,15 @@ import java.util.List;
 @RequestMapping(value = "/api/v1/users", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Users", description = "User Management Endpoints")
 public class UsersController {
-
   private final UserQueryService userQueryService;
+  private final pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.services.UserCommandService userCommandService;
   private final UserProfileQueryService userProfileQueryService;
 
   public UsersController(UserQueryService userQueryService,
-                         UserProfileQueryService userProfileQueryService) {
+      pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.services.UserCommandService userCommandService,
+      UserProfileQueryService userProfileQueryService) {
     this.userQueryService = userQueryService;
+    this.userCommandService = userCommandService;
     this.userProfileQueryService = userProfileQueryService;
   }
 
@@ -80,7 +82,9 @@ public class UsersController {
 
   /**
    * Returns the currently authenticated user with optional profile information.
-   * @return CurrentUserResource containing id, email, roles and profile if available
+   * 
+   * @return CurrentUserResource containing id, email, roles and profile if
+   *         available
    */
   @GetMapping(value = "/me")
   public ResponseEntity<CurrentUserResource> getCurrentUser() {
@@ -105,5 +109,18 @@ public class UsersController {
     var currentUser = new CurrentUserResource(
         userResource.id(), userResource.email(), userResource.roles(), profileResource);
     return ResponseEntity.ok(currentUser);
+  }
+
+  @org.springframework.web.bind.annotation.PutMapping(value = "/{userId}/disability")
+  public ResponseEntity<UserResource> updateDisabilityStatus(@PathVariable Long userId,
+      @org.springframework.web.bind.annotation.RequestBody pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.rest.resources.UpdateUserDisabilityStatusResource resource) {
+    var command = new pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.UpdateUserDisabilityStatusCommand(
+        userId, resource.disability());
+    var user = userCommandService.handle(command);
+    if (user.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+    var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
+    return ResponseEntity.ok(userResource);
   }
 }

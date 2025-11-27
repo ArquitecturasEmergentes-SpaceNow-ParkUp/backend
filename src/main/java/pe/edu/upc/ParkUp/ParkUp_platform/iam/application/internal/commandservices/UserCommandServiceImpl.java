@@ -18,8 +18,9 @@ import java.util.Optional;
 /**
  * User command service implementation
  * <p>
- *     This class implements the {@link UserCommandService} interface and provides the implementation for the
- *     {@link SignInCommand} and {@link SignUpCommand} commands.
+ * This class implements the {@link UserCommandService} interface and provides
+ * the implementation for the
+ * {@link SignInCommand} and {@link SignUpCommand} commands.
  * </p>
  */
 @Service
@@ -43,10 +44,13 @@ public class UserCommandServiceImpl implements UserCommandService {
   /**
    * Handle the sign-in command
    * <p>
-   *     This method handles the {@link SignInCommand} command and returns the user and the token.
+   * This method handles the {@link SignInCommand} command and returns the user
+   * and the token.
    * </p>
+   * 
    * @param command the sign-in command containing the email and password
-   * @return an optional containing the user matching the email and the generated token, or empty if credentials are invalid
+   * @return an optional containing the user matching the email and the generated
+   *         token, or empty if credentials are invalid
    */
   @Override
   public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
@@ -63,8 +67,9 @@ public class UserCommandServiceImpl implements UserCommandService {
   /**
    * Handle the sign-up command
    * <p>
-   *     This method handles the {@link SignUpCommand} command and returns the user.
+   * This method handles the {@link SignUpCommand} command and returns the user.
    * </p>
+   * 
    * @param command the sign-up command containing the username and password
    * @return the created user
    */
@@ -73,19 +78,31 @@ public class UserCommandServiceImpl implements UserCommandService {
     if (userRepository.existsByEmail(command.email()))
       throw new RuntimeException("Username already exists");
     var roles = command.roles().stream()
-        .map(roleName ->
-            roleRepository.findByName(Roles.valueOf(roleName))
-                .orElseThrow(() -> new RuntimeException("Role name not found")))
+        .map(roleName -> roleRepository.findByName(Roles.valueOf(roleName))
+            .orElseThrow(() -> new RuntimeException("Role name not found")))
         .toList();
-    
+
     // Create user without roles first
     var user = new User(command.email(), hashingService.encode(command.password()));
-    
+
     // Add the persistent roles to the user
     user.addRoles(roles);
-    
+
     // Save and return
     userRepository.save(user);
     return userRepository.findByEmail(command.email());
+  }
+
+  @Override
+  public Optional<User> handle(
+      pe.edu.upc.ParkUp.ParkUp_platform.iam.domain.model.commands.UpdateUserDisabilityStatusCommand command) {
+    var user = userRepository.findById(command.userId());
+    if (user.isEmpty())
+      return Optional.empty();
+
+    var updatedUser = user.get();
+    updatedUser.setDisability(command.disability());
+    userRepository.save(updatedUser);
+    return Optional.of(updatedUser);
   }
 }

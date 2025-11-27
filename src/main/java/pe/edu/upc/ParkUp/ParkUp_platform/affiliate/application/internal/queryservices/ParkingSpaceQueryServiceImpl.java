@@ -21,5 +21,9 @@ public class ParkingSpaceQueryServiceImpl implements ParkingSpaceQueryService {
     public List<ParkingSpace> getByMapId(Long mapId) {
         return parkingSpaceRepository.findByMapId(mapId);
     }
-}
 
+    @Override
+    public java.util.Optional<ParkingSpace> getById(Long id) {
+        return parkingSpaceRepository.findById(id);
+    }
+}
