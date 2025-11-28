@@ -9,6 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.resources.OpenDoorResource;
+import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.commands.MakeEdgeNodeRequestCommand;
+
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.commands.GenerateQrCodeCommand;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.entities.RecognitionUnit;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.domain.model.queries.GetAllRecognitionUnitsByAffiliateQuery;
@@ -28,6 +32,7 @@ import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transfo
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.CreateRecognitionUnitCommandFromRequestAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.RecognitionUnitResourceFromEntityAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.RegisterEdgeNodeCommandFromRequestAssembler;
+import pe.edu.upc.ParkUp.ParkUp_platform.iam.interfaces.acl.IamContextFacade;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.ProcessQrCodeCommandFromRequestAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.EdgeNodeRegistrationResponseFromEntityAssembler;
 import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transform.QrCodeResponseFromEntityAssembler;
@@ -35,6 +40,7 @@ import pe.edu.upc.ParkUp.ParkUp_platform.entriesAndExits.interfaces.rest.transfo
 import java.util.List;
 import java.util.Optional;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.core.Authentication;
 
 /**
  * RecognitionUnitController
@@ -50,13 +56,17 @@ public class RecognitionUnitController {
     private final RecognitionUnitCommandService recognitionUnitCommandService;
     private final RecognitionUnitQueryService recognitionUnitQueryService;
     private final EdgeNodeCommunicationService edgeNodeCommunicationService;
+    private final IamContextFacade iamContextFacade;
+
 
     public RecognitionUnitController(RecognitionUnitCommandService recognitionUnitCommandService,
                                    RecognitionUnitQueryService recognitionUnitQueryService,
-                                   EdgeNodeCommunicationService edgeNodeCommunicationService) {
+                                   EdgeNodeCommunicationService edgeNodeCommunicationService,
+                                   IamContextFacade iamContextFacade) {
         this.recognitionUnitCommandService = recognitionUnitCommandService;
         this.recognitionUnitQueryService = recognitionUnitQueryService;
         this.edgeNodeCommunicationService = edgeNodeCommunicationService;
+        this.iamContextFacade = iamContextFacade;
     }
 
     @PostMapping
@@ -204,6 +214,84 @@ public class RecognitionUnitController {
             return ResponseEntity.notFound().build();
         }
     }
+
+
+      @PostMapping("/open-door-with-qr")
+public ResponseEntity<?> openDoorWithQr(
+        @RequestBody OpenDoorResource request,
+        Authentication authentication
+) {
+    if (authentication == null || authentication.getName() == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Missing or invalid authentication");
+    }
+
+    String email = authentication.getName();
+
+    Long userId = iamContextFacade.fetchUserIdByUsername(email);
+    if (userId == 0L) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("User not found for authenticated email");
+    }
+
+    if (request == null || request.fullCode() == null || request.fullCode().isBlank()) {
+        return ResponseEntity.badRequest().body("fullCode is required");
+    }
+
+    String[] parts = request.fullCode().split("-");
+    if (parts.length != 2) {
+        return ResponseEntity.badRequest()
+                .body("Invalid QR format. Expected '<edgeNodeId>-<gateId>'");
+    }
+
+    Long edgeNodeId;
+    try {
+        edgeNodeId = Long.parseLong(parts[0]);
+    } catch (NumberFormatException e) {
+        return ResponseEntity.badRequest().body("Invalid edgeNodeId in QR code");
+    }
+    String gateId = parts[1].toUpperCase(); 
+
+    var query = new GetRecognitionUnitByIdQuery(edgeNodeId); 
+    var recognitionUnitOpt = recognitionUnitQueryService.handle(query);
+    if (recognitionUnitOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Recognition unit (Edge Node) not found for id=" + edgeNodeId);
+    }
+
+    String edgeRequestBody = """
+            {
+              "user_id": %d,
+              "gate_id": "%s"
+            }
+            """.formatted(userId, gateId);
+
+    var command = MakeEdgeNodeRequestCommand.of(
+            edgeNodeId,
+            "/serverRequestsOpening",
+            HttpMethod.POST,
+            edgeRequestBody
+    );
+
+    String edgeResponseJson;
+    try {
+        edgeResponseJson = edgeNodeCommunicationService.makeRequest(command);
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error communicating with Edge Node: " + e.getMessage());
+    }
+
+    var response = java.util.Map.of(
+            "edgeNodeId", edgeNodeId,
+            "gateId", gateId,
+            "userId", userId,
+            "edgeNodeResponse", edgeResponseJson
+    );
+
+    return ResponseEntity.ok(response);
+}
+
+
 
     @PostMapping("/{recognitionUnitId}/request")
     @Operation(summary = "Make request to Edge Node", description = "Send HTTP request to a specific Edge Node")
