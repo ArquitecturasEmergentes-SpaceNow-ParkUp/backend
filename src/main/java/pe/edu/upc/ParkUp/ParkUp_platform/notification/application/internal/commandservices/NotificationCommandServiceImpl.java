@@ -34,11 +34,11 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     private final ProfileContextFacade profileContextFacade;
 
     public NotificationCommandServiceImpl(NotificationLogRepository notificationLogRepository,
-                                         UserDeviceRepository userDeviceRepository,
-                                         PushNotificationProvider pushProvider,
-                                         EmailNotificationProvider emailProvider,
-                                         WhatsAppNotificationProvider whatsAppProvider,
-                                         ProfileContextFacade profileContextFacade) {
+            UserDeviceRepository userDeviceRepository,
+            PushNotificationProvider pushProvider,
+            EmailNotificationProvider emailProvider,
+            WhatsAppNotificationProvider whatsAppProvider,
+            ProfileContextFacade profileContextFacade) {
         this.notificationLogRepository = notificationLogRepository;
         this.userDeviceRepository = userDeviceRepository;
         this.pushProvider = pushProvider;
@@ -60,8 +60,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
                     command.type(),
                     command.title(),
                     command.message(),
-                    command.metadata()
-            );
+                    command.metadata());
             notificationLog.markAsFailed("User has notifications disabled");
             return Optional.of(notificationLogRepository.save(notificationLog));
         }
@@ -73,8 +72,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
                 command.type(),
                 command.title(),
                 command.message(),
-                command.metadata()
-        );
+                command.metadata());
 
         // Save as PENDING first
         var savedLog = notificationLogRepository.save(notificationLog);
@@ -83,7 +81,8 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
         String externalId = null;
         try {
             externalId = switch (command.channel()) {
-                case PUSH -> sendPushNotification(command.userId(), command.title(), command.message(), command.metadata());
+                case PUSH ->
+                    sendPushNotification(command.userId(), command.title(), command.message(), command.metadata());
                 case EMAIL -> sendEmailNotification(command.userId(), command.title(), command.message());
                 case WHATSAPP -> sendWhatsAppNotification(command.userId(), command.message());
             };
@@ -107,7 +106,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     public Optional<UserDevice> handle(RegisterDeviceCommand command) {
         // Check if device token already exists
         var existingDevice = userDeviceRepository.findByDeviceToken(command.deviceToken());
-        
+
         if (existingDevice.isPresent()) {
             // Update existing device (reactivate if needed)
             var device = existingDevice.get();
@@ -120,8 +119,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
                 command.userId(),
                 command.deviceToken(),
                 command.deviceType(),
-                command.deviceName()
-        );
+                command.deviceName());
 
         var savedDevice = userDeviceRepository.save(device);
         return Optional.of(savedDevice);
@@ -164,7 +162,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
     private String sendPushNotification(Long userId, String title, String message, String metadata) {
         // Find active devices for user
         var devices = userDeviceRepository.findByUserIdAndIsActive(userId, true);
-        
+
         if (devices.isEmpty()) {
             LOGGER.info("No active devices found for user {}", userId);
             return null;
@@ -184,20 +182,13 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
 
         // TODO: Get user email from IAM BC (via ACL or shared service)
         String userEmail = "user" + userId + "@parkup.com"; // Mock email - should be fetched from IAM context
-        
+
         return emailProvider.sendEmail(userEmail, subject, message, message);
     }
 
     private String sendWhatsAppNotification(Long userId, String message) {
-        // Check if user has SMS/WhatsApp notifications enabled
-        if (!profileContextFacade.areSmsNotificationsEnabled(userId)) {
-            LOGGER.warn("SMS/WhatsApp notifications disabled for user {}", userId);
-            return null;
-        }
-
-        // Get user phone number from profile
         var phoneNumberOpt = profileContextFacade.getUserPhoneNumber(userId);
-        
+
         if (phoneNumberOpt.isEmpty()) {
             LOGGER.error("No phone number found for user {}", userId);
             return null;
@@ -205,7 +196,7 @@ public class NotificationCommandServiceImpl implements NotificationCommandServic
 
         String phoneNumber = phoneNumberOpt.get();
         LOGGER.info("Sending WhatsApp message to {}", phoneNumber);
-        
+
         return whatsAppProvider.sendWhatsApp(phoneNumber, message);
     }
 }

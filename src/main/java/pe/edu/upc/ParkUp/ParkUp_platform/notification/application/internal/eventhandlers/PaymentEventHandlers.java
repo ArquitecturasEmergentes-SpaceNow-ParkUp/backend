@@ -34,12 +34,12 @@ public class PaymentEventHandlers {
 
         var command = new SendNotificationCommand(
                 userId,
-                NotificationChannel.PUSH,
+                NotificationChannel.WHATSAPP,
                 NotificationType.PAYMENT_SUCCESS,
                 "Payment Successful",
                 "Your payment of $" + amount + " has been processed successfully.",
-                "{\"paymentId\": " + paymentId + ", \"reservationId\": " + reservationId + ", \"amount\": \"$" + amount + "\"}"
-        );
+                "{\"paymentId\": " + paymentId + ", \"reservationId\": " + reservationId + ", \"amount\": \"$" + amount
+                        + "\"}");
         notificationCommandService.handle(command);
     }
 
@@ -51,15 +51,14 @@ public class PaymentEventHandlers {
         Long userId = 1L; // Get from event (no domain event modelled for failures yet)
         Long paymentId = 200L; // Get from event
         String reason = "Insufficient funds"; // Get from event
-        
+
         var command = new SendNotificationCommand(
                 userId,
-                NotificationChannel.PUSH,
+                NotificationChannel.WHATSAPP,
                 NotificationType.PAYMENT_FAILED,
                 "Payment Failed",
                 "Your payment failed: " + reason + ". Please update your payment method.",
-                "{\"paymentId\": " + paymentId + ", \"reason\": \"" + reason + "\"}"
-        );
+                "{\"paymentId\": " + paymentId + ", \"reason\": \"" + reason + "\"}");
         notificationCommandService.handle(command);
     }
 
@@ -71,15 +70,15 @@ public class PaymentEventHandlers {
         Long userId = 1L; // Get from event (no refund event modelled yet)
         Long refundId = 300L; // Get from event
         String amount = "$15.00"; // Get from event
-        
+
         var command = new SendNotificationCommand(
                 userId,
-                NotificationChannel.EMAIL,
+                NotificationChannel.WHATSAPP,
                 NotificationType.PAYMENT_REFUND,
                 "Refund Processed",
-                "Your refund of " + amount + " has been processed and will appear in your account within 5-7 business days.",
-                "{\"refundId\": " + refundId + ", \"amount\": \"" + amount + "\"}"
-        );
+                "Your refund of " + amount
+                        + " has been processed and will appear in your account within 5-7 business days.",
+                "{\"refundId\": " + refundId + ", \"amount\": \"" + amount + "\"}");
         notificationCommandService.handle(command);
     }
 }

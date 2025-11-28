@@ -1,6 +1,9 @@
 package pe.edu.upc.ParkUp.ParkUp_platform.notification.application.internal.eventhandlers;
 
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+
 import org.springframework.context.event.EventListener;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationConfirmedEvent;
 import pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationCreatedEvent;
@@ -34,7 +37,8 @@ public class ReservationEventHandlers {
         // Extract data from event
         Long userId = reservationConfirmedEvent.getUserId();
         Long reservationId = reservationConfirmedEvent.getReservationId();
-        
+        LocalDateTime reservationDate = reservationConfirmedEvent.getOccurredOn();
+
         // Send PUSH notification
         var pushCommand = new SendNotificationCommand(
                 userId,
@@ -42,10 +46,9 @@ public class ReservationEventHandlers {
                 NotificationType.RESERVATION_CONFIRMED,
                 "Reservation Confirmed",
                 "Your parking reservation #" + reservationId + " has been confirmed!",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(pushCommand);
-        
+
         // Send EMAIL notification
         var emailCommand = new SendNotificationCommand(
                 userId,
@@ -53,9 +56,18 @@ public class ReservationEventHandlers {
                 NotificationType.RESERVATION_CONFIRMED,
                 "Reservation Confirmed - ParkUp",
                 "Your parking reservation #" + reservationId + " has been confirmed. You can view details in the app.",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(emailCommand);
+
+        // Send WHATSAPP notification
+        var whatsappCommand = new SendNotificationCommand(
+                userId,
+                NotificationChannel.WHATSAPP,
+                NotificationType.RESERVATION_CONFIRMED,
+                "Hey, your reservation has been confirmed!",
+                "Your parking reservation #" + reservationId + " has been confirmed!\n\n" + reservationDate,
+                "{\"reservationId\": " + reservationId + "}");
+        notificationCommandService.handle(whatsappCommand);
     }
 
     /**
@@ -75,8 +87,7 @@ public class ReservationEventHandlers {
                 NotificationType.RESERVATION_REMINDER,
                 "Reservation Starting Soon",
                 "Your parking reservation starts at " + startStr + ". Don't be late!",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(command);
     }
 
@@ -87,15 +98,14 @@ public class ReservationEventHandlers {
     public void onReservationCancelled(ReservationCancelledEvent event) {
         Long userId = event.getUserId();
         Long reservationId = event.getReservationId();
-        
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
                 NotificationType.RESERVATION_CANCELLED,
                 "Reservation Cancelled",
                 "Your parking reservation #" + reservationId + " has been cancelled.",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(command);
     }
 
@@ -106,15 +116,14 @@ public class ReservationEventHandlers {
     public void onReservationStarted(ReservationStartedEvent event) {
         Long userId = event.getUserId();
         Long reservationId = event.getReservationId();
-        
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
                 NotificationType.RESERVATION_STARTED,
                 "Parking Session Started",
                 "Your parking session has started. Enjoy your stay!",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(command);
     }
 
@@ -125,15 +134,14 @@ public class ReservationEventHandlers {
     public void onReservationCompleted(ReservationCompletedEvent event) {
         Long userId = event.getUserId();
         Long reservationId = event.getReservationId();
-        
+
         var command = new SendNotificationCommand(
                 userId,
                 NotificationChannel.PUSH,
                 NotificationType.RESERVATION_COMPLETED,
                 "Parking Session Completed",
                 "Your parking session is complete. Thank you for using ParkUp!",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(command);
     }
 
@@ -141,8 +149,10 @@ public class ReservationEventHandlers {
      * Handles reservation expired event
      */
     @EventListener
-    public void onReservationExpired(pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationExpiredEvent event) {
-        // Handle only explicit ReservationExpiredEvent so that we don't receive every Spring application event
+    public void onReservationExpired(
+            pe.edu.upc.ParkUp.ParkUp_platform.reservation.domain.model.events.ReservationExpiredEvent event) {
+        // Handle only explicit ReservationExpiredEvent so that we don't receive every
+        // Spring application event
         Long userId = event.getUserId();
         Long reservationId = event.getReservationId();
 
@@ -152,8 +162,7 @@ public class ReservationEventHandlers {
                 NotificationType.RESERVATION_EXPIRED,
                 "Parking Time Exceeded",
                 "Your parking time has expired. Additional charges may apply.",
-                "{\"reservationId\": " + reservationId + "}"
-        );
+                "{\"reservationId\": " + reservationId + "}");
         notificationCommandService.handle(command);
     }
 }
