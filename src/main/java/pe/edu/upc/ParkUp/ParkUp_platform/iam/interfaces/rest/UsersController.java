@@ -107,7 +107,7 @@ public class UsersController {
     }
 
     var currentUser = new CurrentUserResource(
-        userResource.id(), userResource.email(), userResource.roles(), profileResource);
+        userResource.id(), userResource.email(), userResource.roles(), userResource.disability(), profileResource);
     return ResponseEntity.ok(currentUser);
   }
 

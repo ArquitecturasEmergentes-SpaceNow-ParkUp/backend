@@ -7,4 +7,4 @@ import java.util.List;
 /**
  * Resource representing the currently authenticated user, including profile information if available.
  */
-public record CurrentUserResource(Long id, String email, List<String> roles, UserProfileResource profile) {}
+public record CurrentUserResource(Long id, String email, List<String> roles, boolean disability, UserProfileResource profile) {}
